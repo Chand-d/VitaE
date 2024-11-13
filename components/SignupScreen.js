@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  Modal,
+} from 'react-native';
 import { Auth } from 'aws-amplify';
-import { Picker } from '@react-native-picker/picker';
-
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const SignupScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
@@ -12,6 +22,8 @@ const SignupScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [gender, setGender] = useState('');
+  const [isGenderPickerVisible, setIsGenderPickerVisible] = useState(false);
+  const [isDatePickerVisible, setIsDatePickerVisible] = useState(false); // New state for date picker
 
   const handleSignup = async () => {
     if (password !== confirmPassword) {
@@ -26,7 +38,7 @@ const SignupScreen = ({ navigation }) => {
         attributes: {
           email,
           name,
-          birthdate, // Assuming user enters date in the YYYY-MM-DD format
+          birthdate, // The birthdate is now selected via the date picker
           gender,
         },
       });
@@ -37,129 +49,201 @@ const SignupScreen = ({ navigation }) => {
     }
   };
 
+  const genderOptions = ['Male', 'Female', 'Other'];
+
+  // Handler for date selection
+  const handleDateChange = (event, selectedDate) => {
+    setIsDatePickerVisible(false); // Close the picker
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      setBirthdate(formattedDate);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.select({ ios: 0, android: 500 })}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Create Account</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          placeholderTextColor="#AAB7C4"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        value={name}
-        onChangeText={setName}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          placeholderTextColor="#AAB7C4"
+          value={name}
+          onChangeText={setName}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email Address"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email Address"
+          placeholderTextColor="#AAB7C4"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#AAB7C4"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Password"
+          placeholderTextColor="#AAB7C4"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Birthdate (YYYY-MM-DD)"
-        value={birthdate}
-        onChangeText={setBirthdate}
-        keyboardType="numeric"
-      />
-
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={gender}
-          style={styles.picker}
-          onValueChange={(itemValue) => setGender(itemValue)}
+        {/* Birthdate Picker */}
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => setIsDatePickerVisible(true)}
         >
-          <Picker.Item label="Select Gender" value="" />
-          <Picker.Item label="Male" value="male" />
-          <Picker.Item label="Female" value="female" />
-          <Picker.Item label="Other" value="other" />
-        </Picker>
-      </View>
+          <Text style={{ color: birthdate ? '#000' : '#AAB7C4' }}>
+            {birthdate || 'Select Birthdate'}
+          </Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
+        {/* Date Picker Modal */}
+        <Modal
+          visible={isDatePickerVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setIsDatePickerVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <DateTimePicker
+                value={birthdate ? new Date(birthdate) : new Date()}
+                mode="date"
+                display="calendar"
+                onChange={handleDateChange}
+              />
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setIsDatePickerVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.loginText}>Already have an account? Log in</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Gender Picker */}
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => setIsGenderPickerVisible(true)}
+        >
+          <Text style={{ color: gender ? '#000' : '#AAB7C4' }}>
+            {gender || 'Select Gender'}
+          </Text>
+        </TouchableOpacity>
+
+        <Modal
+          visible={isGenderPickerVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setIsGenderPickerVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              {genderOptions.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setGender(option);
+                    setIsGenderPickerVisible(false);
+                  }}
+                >
+                  <Text style={styles.modalOptionText}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setIsGenderPickerVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <TouchableOpacity style={styles.button} onPress={handleSignup}>
+          <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.loginText}>Already have an account? Log in</Text>
+        </TouchableOpacity>
+
+        {/* Add some padding at the bottom so that the content can be scrolled above the keyboard */}
+        <View style={{ height: 60 }} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#E3F2FD', // Light blue background color
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFEDDB', // Light, clean background color
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2C3E50', // Darker font for the title
+    color: '#1565C0', // Deep blue color
     marginBottom: 30,
   },
   input: {
     width: '100%',
-    height: 50,
-    borderColor: '#B0BEC5',
+    minHeight: 50,
+    borderColor: '#90CAF9', // Light blue border color
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 15,
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
     fontSize: 16,
-    elevation: 2, // Add slight shadow for a more polished feel
-  },
-  pickerContainer: {
-    width: '100%',
-    borderColor: '#B0BEC5',
-    borderWidth: 1,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    marginBottom: 15,
     elevation: 2,
-  },
-  picker: {
-    height: 50,
-    width: '100%',
-    color: '#2C3E50',
+    justifyContent: 'center',
   },
   button: {
-    backgroundColor: '#F27A1A',
+    backgroundColor: '#1E88E5', // Rich blue button color
     padding: 15,
     borderRadius: 10,
     width: '100%',
     alignItems: 'center',
-    elevation: 5, // Add a subtle shadow effect
+    elevation: 5,
   },
   buttonText: {
     color: 'white',
@@ -168,8 +252,37 @@ const styles = StyleSheet.create({
   },
   loginText: {
     marginTop: 20,
-    color: '#F27A1A',
+    color: '#1565C0',
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: '#00000088', // Semi-transparent background
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    paddingBottom: 20,
+    paddingTop: 10,
+  },
+  modalOption: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalOptionText: {
+    fontSize: 18,
+    color: '#1E88E5', // Rich blue color
+  },
+  modalCancel: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 18,
+    color: '#1565C0',
+    fontWeight: 'bold',
   },
 });
 

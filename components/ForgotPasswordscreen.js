@@ -38,6 +38,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
+            placeholderTextColor="#AAB7C4"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -52,12 +53,14 @@ const ForgotPasswordScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Confirmation Code"
+            placeholderTextColor="#AAB7C4"
             value={confirmationCode}
             onChangeText={setConfirmationCode}
           />
           <TextInput
             style={styles.input}
             placeholder="New Password"
+            placeholderTextColor="#AAB7C4"
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry
@@ -80,18 +83,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFEDDB', // Light background to match other screens
+    backgroundColor: '#E3F2FD', // Light blue background color
   },
   title: {
     fontSize: 28, // Slightly larger for better emphasis
     fontWeight: 'bold',
-    color: '#2C3E50', // Darker font color
+    color: '#1565C0', // Deep blue font color
     marginBottom: 30, // More spacing for a cleaner look
   },
   input: {
     width: '100%',
     height: 50,
-    borderColor: '#B0BEC5', // Lighter border color for a polished feel
+    borderColor: '#90CAF9', // Lighter border color for a polished feel
     borderWidth: 1,
     marginBottom: 15, // Consistent spacing with the login screen
     paddingHorizontal: 15,
@@ -101,7 +104,7 @@ const styles = StyleSheet.create({
     elevation: 2, // Subtle shadow for inputs
   },
   button: {
-    backgroundColor: '#F27A1A', // Same orange color as the other screens
+    backgroundColor: '#1E88E5', // Consistent blue color with the rest of the app
     padding: 15,
     borderRadius: 10,
     width: '100%',
@@ -116,10 +119,10 @@ const styles = StyleSheet.create({
   },
   backToLoginText: {
     marginTop: 20,
-    color: '#F27A1A',
+    color: '#1E88E5',
     fontSize: 16, // Match font size with other links
+    fontWeight: 'bold',
   },
 });
-
 
 export default ForgotPasswordScreen;

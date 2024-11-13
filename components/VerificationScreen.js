@@ -35,6 +35,7 @@ const VerificationScreen = ({ route, navigation }) => {
       <TextInput
         style={styles.input}
         placeholder="Verification Code"
+        placeholderTextColor="#AAB7C4"
         value={verificationCode}
         onChangeText={setVerificationCode}
         keyboardType="number-pad"
@@ -55,24 +56,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFEDDB', // Match the background color with the rest of the app
+    backgroundColor: '#E3F2FD', // Light blue background color
   },
   title: {
     fontSize: 28, // Larger font for title consistency
     fontWeight: 'bold',
-    color: '#2C3E50', // Darker color for emphasis
+    color: '#1565C0', // Deep blue color for emphasis
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
     marginBottom: 20,
-    color: '#2C3E50', // Same dark color for consistency
+    color: '#5E92F3', // Medium blue color for consistency
     textAlign: 'center',
   },
   input: {
     width: '100%',
     height: 50,
-    borderColor: '#B0BEC5', // Lighter border color
+    borderColor: '#90CAF9', // Light blue border color
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 15,
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     elevation: 2, // Subtle shadow for the input
   },
   button: {
-    backgroundColor: '#F27A1A', // Consistent button color
+    backgroundColor: '#1E88E5', // Consistent rich blue button color
     padding: 15,
     borderRadius: 10, // Rounded corners
     width: '100%',
@@ -98,11 +99,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   resendButtonText: {
-    color: '#F27A1A', // Same color for consistency across the app
+    color: '#1E88E5', // Same color for consistency across the app
     fontSize: 16,
     fontWeight: 'bold',
   },
 });
-
 
 export default VerificationScreen;
