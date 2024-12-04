@@ -1,4 +1,23 @@
 {
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-vitae1-dev-67c1d-authRole",
+      "UnauthRoleArn": "arn:aws:iam::014498624696:role/amplify-vitae1-dev-67c1d-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::014498624696:role/amplify-vitae1-dev-67c1d-authRole",
+      "Region": "ca-central-1",
+      "DeploymentBucketName": "amplify-vitae1-dev-67c1d-deployment",
+      "UnauthRoleName": "amplify-vitae1-dev-67c1d-unauthRole",
+      "StackName": "amplify-vitae1-dev-67c1d",
+      "StackId": "arn:aws:cloudformation:ca-central-1:014498624696:stack/amplify-vitae1-dev-67c1d/330764f0-a20a-11ef-ac98-027799149479",
+      "AmplifyAppId": "d7ijobppmzkl4"
+    },
+    "categories": {
+      "auth": {
+        "beglzee5e1095": {},
+        "vitae135f94454": {}
+      }
+    }
+  },
   "vitae": {
     "awscloudformation": {
       "AuthRoleName": "amplify-vitae-vitae-c0a03-authRole",
@@ -14,24 +33,6 @@
     "categories": {
       "auth": {
         "vitae2e27b1b3": {}
-      }
-    }
-  },
-  "dev": {
-    "awscloudformation": {
-      "AuthRoleName": "amplify-beglz-dev-281a2-authRole",
-      "UnauthRoleArn": "arn:aws:iam::014498624696:role/amplify-beglz-dev-281a2-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::014498624696:role/amplify-beglz-dev-281a2-authRole",
-      "Region": "ca-central-1",
-      "DeploymentBucketName": "amplify-beglz-dev-281a2-deployment",
-      "UnauthRoleName": "amplify-beglz-dev-281a2-unauthRole",
-      "StackName": "amplify-beglz-dev-281a2",
-      "StackId": "arn:aws:cloudformation:ca-central-1:014498624696:stack/amplify-beglz-dev-281a2/05060a70-7c4e-11ef-b3d1-0ef260261bed",
-      "AmplifyAppId": "d3li1ves3y2jz2"
-    },
-    "categories": {
-      "auth": {
-        "beglzee5e1095": {}
       }
     }
   }

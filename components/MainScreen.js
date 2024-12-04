@@ -1,443 +1,351 @@
+// FileUploader.js
+
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
   StyleSheet,
-  ScrollView,
+  SafeAreaView,
   TextInput,
-  Animated,
-  Platform,
-  KeyboardAvoidingView,
-  Dimensions,
-  SafeAreaView
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { ScaledSheet, moderateScale } from 'react-native-size-matters';
+import * as FileSystem from 'expo-file-system';
 
-const { width, height } = Dimensions.get('window');
+const FileUploader = () => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [jobDescription, setJobDescription] = useState('');
+  const [additionalText, setAdditionalText] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [updatedResume, setUpdatedResume] = useState('');
 
-const ResumeUpload = () => {
-  const [file, setFile] = useState(null);
-  const [error, setError] = useState('');
-  const [pastedText, setPastedText] = useState('');
-  const [activeTab, setActiveTab] = useState('upload');
-  const [expandedPrompt, setExpandedPrompt] = useState(null);
-  const tabIndicatorPosition = new Animated.Value(0);
+  const API_ENDPOINT =
+    'https://1aw4hjm1bc.execute-api.ca-central-1.amazonaws.com/dev/Image-Recognization'; // Replace with your actual API endpoint
 
-  const enhancementPrompts = [
-    {
-      id: 1,
-      title: "Highlight Achievements",
-      icon: "trophy",
-      description: "Add specific metrics and achievements from your previous roles",
-      examples: [
-        "Increased sales by X%",
-        "Led a team of X people",
-        "Reduced costs by X amount"
-      ]
-    },
-    {
-      id: 2,
-      title: "Technical Skills",
-      icon: "code-working",
-      description: "List relevant technical skills and proficiency levels",
-      examples: [
-        "Programming languages",
-        "Software tools",
-        "Industry-specific technologies"
-      ]
-    },
-    {
-      id: 3,
-      title: "Professional Summary",
-      icon: "document-text",
-      description: "Write a compelling professional summary",
-      examples: [
-        "Years of experience",
-        "Key specializations",
-        "Career highlights"
-      ]
-    }
-  ];
-
-  const switchTab = (tab) => {
-    setActiveTab(tab);
-    Animated.timing(tabIndicatorPosition, {
-      toValue: tab === 'upload' ? 0 : 1,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
-
+  // Handle File Selection
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: [
           'application/pdf',
-          'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'application/rtf',
-          'text/plain'
+          'text/plain',
         ],
-        copyToCacheDirectory: true
+        copyToCacheDirectory: true,
       });
 
-      if (result.type === 'success') {
-        setFile(result);
-        setError('');
+      console.log('DocumentPicker Result:', result);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setSelectedFile(file);
+        console.log('Selected File:', file);
+      } else if (result.canceled) {
+        Alert.alert('Canceled', 'No file selected.');
+      } else {
+        Alert.alert('Error', 'Unknown response from document picker.');
       }
     } catch (err) {
-      setError('Error picking document');
+      console.error('Error picking document:', err);
+      Alert.alert('Error', 'Failed to pick document. Please try again.');
     }
   };
 
-  const handleSubmit = async () => {
-    if (!file && !pastedText) {
-      setError('Please either upload a file or paste your resume content');
+  // Handle File Upload
+  const uploadFile = async () => {
+    if (!selectedFile) {
+      Alert.alert('Validation Error', 'Please select a file to upload.');
       return;
     }
+
+    console.log('Selected File:', selectedFile);
+
+    try {
+      const fileUri = selectedFile.uri;
+      const fileName = selectedFile.name;
+      const fileExtension = fileName.split('.').pop().toLowerCase();
+
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      console.log('File Info:', fileInfo);
+
+      if (!fileInfo.exists) {
+        Alert.alert('Error', 'The selected file does not exist.');
+        return;
+      }
+
+      setUploading(true);
+      console.log('Uploading file...');
+
+      const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const payload = {
+        file_data_base64: fileContent,
+        file_name: fileName,
+        job_description: jobDescription,
+        additional_text: additionalText,
+      };
+
+      console.log('Payload:', payload);
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json();
+      console.log('Server Response:', responseData);
+
+      if (response.ok) {
+        const updatedResumeText = responseData.updated_resume;
+        setUpdatedResume(updatedResumeText);
+        Alert.alert('Success', 'Your resume has been updated.');
+      } else {
+        Alert.alert('Error', responseData.message || 'Failed to update resume.');
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      Alert.alert('Error', 'Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+      console.log('File upload completed.');
+    }
   };
 
-  const renderPromptCard = (prompt) => (
-    <TouchableOpacity
-      key={prompt.id}
-      style={[
-        styles.promptCard,
-        expandedPrompt === prompt.id && styles.promptCardExpanded
-      ]}
-      onPress={() => setExpandedPrompt(
-        expandedPrompt === prompt.id ? null : prompt.id
-      )}
-    >
-      <View style={styles.promptHeader}>
-        <Ionicons name={prompt.icon} size={moderateScale(24)} color="#3B82F6" />
-        <Text style={styles.promptTitle}>{prompt.title}</Text>
-        <Ionicons 
-          name={expandedPrompt === prompt.id ? "chevron-up" : "chevron-down"} 
-          size={moderateScale(24)} 
-          color="#6B7280"
-        />
-      </View>
-      
-      {expandedPrompt === prompt.id && (
-        <View style={styles.promptContent}>
-          <Text style={styles.promptDescription}>{prompt.description}</Text>
-          <View style={styles.examplesList}>
-            {prompt.examples.map((example, index) => (
-              <View key={index} style={styles.exampleItem}>
-                <Ionicons name="checkmark-circle" size={moderateScale(16)} color="#10B981" />
-                <Text style={styles.exampleText}>{example}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+  // Clear Output
+  const clearOutput = () => {
+    setUpdatedResume('');
+    setSelectedFile(null);
+    setJobDescription('');
+    setAdditionalText('');
+  };
+
+  // File Icon based on file type
+  const getFileIcon = (fileType) => {
+    const extension = fileType.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return (
+          <MaterialCommunityIcons
+            name="file-pdf-box"
+            size={24}
+            color="#E74C3C"
+          />
+        );
+      case 'docx':
+        return (
+          <MaterialCommunityIcons
+            name="file-word-box"
+            size={24}
+            color="#3498DB"
+          />
+        );
+      case 'txt':
+        return (
+          <MaterialCommunityIcons
+            name="file-document-box"
+            size={24}
+            color="#2ECC71"
+          />
+        );
+      default:
+        return <Ionicons name="document-outline" size={24} color="#333" />;
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-      >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Create Your Resume</Text>
-            <Text style={styles.headerSubtitle}>
-              Upload a file or paste your resume content
-            </Text>
-          </View>
+      <ScrollView contentContainerStyle={styles.wrapper}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>VitaE</Text>
+          <Text style={styles.headerSubtitle}>Level up your resume</Text>
+        </View>
 
-          <View style={styles.tabContainer}>
-            <TouchableOpacity 
-              style={styles.tab} 
-              onPress={() => switchTab('upload')}
-            >
-              <Text style={[
-                styles.tabText,
-                activeTab === 'upload' && styles.activeTabText
-              ]}>Upload File</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.tab} 
-              onPress={() => switchTab('paste')}
-            >
-              <Text style={[
-                styles.tabText,
-                activeTab === 'paste' && styles.activeTabText
-              ]}>Paste Text</Text>
-            </TouchableOpacity>
-            
-            <Animated.View 
-              style={[
-                styles.tabIndicator,
-                {
-                  transform: [{
-                    translateX: tabIndicatorPosition.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, width * 0.5]
-                    })
-                  }]
-                }
-              ]} 
-            />
-          </View>
+        {/* Job Description Input */}
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Job Description (Optional)"
+          multiline
+          value={jobDescription}
+          onChangeText={setJobDescription}
+        />
 
-          {activeTab === 'upload' ? (
-            <TouchableOpacity 
-              style={[styles.uploadBox, file && styles.uploadBoxSuccess]} 
-              onPress={pickDocument}
-            >
-              <MaterialIcons 
-                name={file ? "check-circle" : "cloud-upload"} 
-                size={moderateScale(48)} 
-                color={file ? "#10B981" : "#6B7280"}
-              />
-              
-              {!file ? (
-                <View style={styles.textContainer}>
-                  <Text style={styles.title}>Upload Your Resume</Text>
-                  <Text style={styles.subtitle}>
-                    Tap to browse (PDF, DOC, DOCX, RTF, TXT)
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.fileInfo}>
-                  <MaterialIcons name="description" size={moderateScale(24)} color="#10B981" />
-                  <Text style={styles.fileName}>{file.name}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+        {/* Additional Information Input */}
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Additional Information (Optional)"
+          multiline
+          value={additionalText}
+          onChangeText={setAdditionalText}
+        />
+
+        {/* Upload Button */}
+        <TouchableOpacity
+          style={[styles.button, uploading && styles.disabledButton]}
+          onPress={uploadFile}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <ActivityIndicator color="#fff" />
           ) : (
-            <View style={styles.textInputContainer}>
-              <TextInput
-                style={styles.textInput}
-                multiline
-                placeholder="Paste your resume content here..."
-                value={pastedText}
-                onChangeText={setPastedText}
-                textAlignVertical="top"
-              />
-            </View>
+            <Text style={styles.buttonText}>Submit</Text>
           )}
+        </TouchableOpacity>
 
-          {error ? (
-            <View style={styles.errorContainer}>
-              <MaterialIcons name="error" size={moderateScale(20)} color="#EF4444" />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.promptsSection}>
-            <Text style={styles.promptsTitle}>Resume Enhancement Tips</Text>
-            {enhancementPrompts.map(renderPromptCard)}
+        {/* Display Selected File */}
+        {selectedFile && (
+          <View style={styles.fileInfo}>
+            {getFileIcon(selectedFile.name.split('.').pop())}
+            <Text style={styles.fileName}>{selectedFile.name}</Text>
           </View>
+        )}
 
-          <TouchableOpacity 
-            style={[
-              styles.submitButton,
-              (!file && !pastedText) && styles.submitButtonDisabled
-            ]}
-            onPress={handleSubmit}
-            disabled={!file && !pastedText}
+        {/* File Picker Button */}
+        <TouchableOpacity style={styles.button} onPress={pickDocument}>
+          <Ionicons name="cloud-upload-outline" size={24} color="white" />
+          <Text style={styles.buttonText}>
+            {selectedFile ? 'Change File' : 'Select Resume'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Clear Output Button */}
+        {updatedResume !== '' && (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={clearOutput}
           >
-            <Text style={styles.submitButtonText}>Continue</Text>
-            <MaterialIcons name="arrow-forward" size={moderateScale(24)} color="white" />
+            <Text style={styles.clearButtonText}>Clear Output</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        )}
+
+        {/* Display Updated Resume */}
+        {updatedResume !== '' && (
+          <View style={styles.resultContainer}>
+            <Text style={styles.resultTitle}>Updated Resume:</Text>
+            <Text style={styles.resultText}>{updatedResume}</Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-const styles = ScaledSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5FCFF',
+  },
+  wrapper: {
+    flexGrow: 1, // Allow the ScrollView content to grow
+    justifyContent: 'flex-start', // Ensure the content starts from the top
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    alignItems: 'center', // Center horizontally
   },
   header: {
-    padding: '20@ms',
-    backgroundColor: '#F8FAFC',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    alignItems: 'center',
+    marginBottom: 30,
   },
   headerTitle: {
-    fontSize: '24@ms',
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: '4@ms',
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#3498DB',
   },
   headerSubtitle: {
-    fontSize: '16@ms',
-    color: '#64748B',
+    fontSize: 16,
+    color: '#7F8C8D',
   },
-  tabContainer: {
+  button: {
+    backgroundColor: '#3498DB',
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 8,
     flexDirection: 'row',
-    marginHorizontal: '20@ms',
-    marginTop: '20@ms',
-    marginBottom: '16@ms',
-    borderRadius: '12@ms',
-    backgroundColor: '#F1F5F9',
-    padding: '4@ms',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: '12@ms',
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: '16@ms',
-    fontWeight: '500',
-    color: '#64748B',
-  },
-  activeTabText: {
-    color: '#3B82F6',
-  },
-  tabIndicator: {
-    position: 'absolute',
-    width: '50%',
-    height: '100%',
-    backgroundColor: 'white',
-    borderRadius: '8@ms',
-  },
-  uploadBox: {
-    margin: '20@ms',
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: '#E5E7EB',
-    borderRadius: '12@ms',
-    padding: '20@ms',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
+    marginBottom: 15,
+    width: '100%',
+    maxWidth: 400,
   },
-  uploadBoxSuccess: {
-    borderColor: '#10B981',
-    backgroundColor: '#ECFDF5',
+  disabledButton: {
+    backgroundColor: '#95A5A6',
   },
-  textContainer: {
-    alignItems: 'center',
-    marginTop: '12@ms',
-  },
-  title: {
-    fontSize: '18@ms',
+  buttonText: {
+    color: 'white',
+    marginLeft: 10,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: '4@ms',
   },
-  subtitle: {
-    fontSize: '14@ms',
-    color: '#6B7280',
+  clearButton: {
+    backgroundColor: '#E74C3C',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 15,
+    width: '100%',
+    maxWidth: 400,
+  },
+  clearButtonText: {
+    color: 'white',
+    fontSize: 16,
     textAlign: 'center',
+    fontWeight: '600',
   },
   fileInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: '12@ms',
+    marginBottom: 15,
+    width: '100%',
+    maxWidth: 400,
   },
   fileName: {
-    fontSize: '16@ms',
-    color: '#10B981',
-    fontWeight: '500',
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 10,
+    flexShrink: 1,
   },
-  textInputContainer: {
-    margin: '20@ms',
+  input: {
+    borderColor: '#BDC3C7',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: '12@ms',
-    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 15,
+    textAlignVertical: 'top',
+    minHeight: 80,
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
   },
-  textInput: {
-    height: '200@ms',
-    padding: '16@ms',
-    fontSize: '16@ms',
-    color: '#374151',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    padding: '12@ms',
-    borderRadius: '8@ms',
-    marginHorizontal: '20@ms',
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: '14@ms',
-  },
-  promptsSection: {
-    padding: '20@ms',
-  },
-  promptsTitle: {
-    fontSize: '20@ms',
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: '16@ms',
-  },
-  promptCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '12@ms',
-    padding: '16@ms',
-    marginBottom: '12@ms',
+  resultContainer: {
+    marginTop: 20,
+    borderColor: '#2ECC71',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    padding: 15,
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#E8F8F5',
   },
-  promptCardExpanded: {
-    backgroundColor: '#F8FAFC',
+  resultTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#16A085',
   },
-  promptHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  promptTitle: {
-    fontSize: '16@ms',
-    fontWeight: '600',
-    color: '#1E293B',
-    flex: 1,
-    marginLeft: '12@ms',
-  },
-  promptContent: {
-    marginTop: '12@ms',
-    paddingTop: '12@ms',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-  },
-  promptDescription: {
-    fontSize: '14@ms',
-    color: '#64748B',
-    marginBottom: '12@ms',
-  },
-  exampleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '8@ms',
-  },
-  exampleText: {
-    fontSize: '14@ms',
-    color: '#475569',
-  },
-  submitButton: {
-    backgroundColor: '#3B82F6',
-    margin: '20@ms',
-    padding: '16@ms',
-    borderRadius: '12@ms',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: '16@ms',
-    fontWeight: '600',
+  resultText: {
+    fontSize: 16,
+    color: '#333',
   },
 });
 
-export default ResumeUpload;
+export default FileUploader;
