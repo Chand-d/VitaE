@@ -19,7 +19,7 @@ const LoginScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Sign In Header */}
-      <Text style={styles.headerText}>Welcome Back!</Text>
+      <Text style={styles.headerText}>VitaE</Text>
       <Text style={styles.subHeaderText}>Sign in to continue</Text>
 
       {/* Sign In Form */}

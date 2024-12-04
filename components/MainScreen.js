@@ -1,5 +1,3 @@
-// FileUploader.js
-
 import React, { useState } from 'react';
 import {
   View,
@@ -15,6 +13,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import PDFLib, { PDFDocument, PDFPage } from 'react-native-pdf-lib'; // Import PDF-lib
 
 const FileUploader = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -108,6 +107,9 @@ const FileUploader = () => {
         const updatedResumeText = responseData.updated_resume;
         setUpdatedResume(updatedResumeText);
         Alert.alert('Success', 'Your resume has been updated.');
+
+        // Convert updated resume to PDF
+        await generatePDF(updatedResumeText); // Generate the PDF
       } else {
         Alert.alert('Error', responseData.message || 'Failed to update resume.');
       }
@@ -120,45 +122,36 @@ const FileUploader = () => {
     }
   };
 
+  // Generate PDF from the updated resume text
+  const generatePDF = async (text) => {
+    try {
+      const path = `${FileSystem.documentDirectory}updated_resume.pdf`;
+
+      const pdfDoc = await PDFDocument.create();
+      const page = await pdfDoc.addPage(PDFPage.create().setMediaBox(200, 200));
+
+      // Add text to the page
+      page.drawText(text, { x: 10, y: 150, fontSize: 12 });
+
+      // Save the PDF
+      await pdfDoc.writeToFile(path);
+
+      console.log('PDF created at path:', path);
+
+      // Optionally, share the PDF or provide a download link
+      Alert.alert('PDF Created', `Your updated resume PDF has been saved at ${path}`);
+    } catch (err) {
+      console.error('Error creating PDF:', err);
+      Alert.alert('Error', 'Failed to create PDF.');
+    }
+  };
+
   // Clear Output
   const clearOutput = () => {
     setUpdatedResume('');
     setSelectedFile(null);
     setJobDescription('');
     setAdditionalText('');
-  };
-
-  // File Icon based on file type
-  const getFileIcon = (fileType) => {
-    const extension = fileType.toLowerCase();
-    switch (extension) {
-      case 'pdf':
-        return (
-          <MaterialCommunityIcons
-            name="file-pdf-box"
-            size={24}
-            color="#E74C3C"
-          />
-        );
-      case 'docx':
-        return (
-          <MaterialCommunityIcons
-            name="file-word-box"
-            size={24}
-            color="#3498DB"
-          />
-        );
-      case 'txt':
-        return (
-          <MaterialCommunityIcons
-            name="file-document-box"
-            size={24}
-            color="#2ECC71"
-          />
-        );
-      default:
-        return <Ionicons name="document-outline" size={24} color="#333" />;
-    }
   };
 
   return (
@@ -204,7 +197,11 @@ const FileUploader = () => {
         {/* Display Selected File */}
         {selectedFile && (
           <View style={styles.fileInfo}>
-            {getFileIcon(selectedFile.name.split('.').pop())}
+            <MaterialCommunityIcons
+              name="file-word-box"
+              size={24}
+              color="#3498DB"
+            />
             <Text style={styles.fileName}>{selectedFile.name}</Text>
           </View>
         )}
@@ -245,12 +242,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5FCFF',
   },
   wrapper: {
-    flexGrow: 1, // Allow the ScrollView content to grow
-    justifyContent: 'flex-start', // Ensure the content starts from the top
+    flexGrow: 1,
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 40,
-    alignItems: 'center', // Center horizontally
+    alignItems: 'center',
   },
   header: {
     alignItems: 'center',
