@@ -210,7 +210,7 @@ const SignupScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E3F2FD', // Light blue background color
+    backgroundColor: '#fffs', // Light blue background color
   },
   scrollContainer: {
     flexGrow: 1,
@@ -221,13 +221,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1565C0', // Deep blue color
+    color: '#000', // Deep blue color
     marginBottom: 30,
   },
   input: {
     width: '100%',
     minHeight: 50,
-    borderColor: '#90CAF9', // Light blue border color
+    borderColor: '#000', // Light blue border color
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 15,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   button: {
-    backgroundColor: '#1E88E5', // Rich blue button color
+    backgroundColor: '#000', // Rich blue button color
     padding: 15,
     borderRadius: 10,
     width: '100%',
@@ -254,6 +254,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: '#1565C0',
     fontSize: 16,
+    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   },
   modalOptionText: {
     fontSize: 18,
-    color: '#1E88E5', // Rich blue color
+    color: '#000', // Rich blue color
   },
   modalCancel: {
     padding: 20,

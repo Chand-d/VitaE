@@ -83,18 +83,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#E3F2FD', // Light blue background color
+    backgroundColor: '#fff', // Light blue background color
   },
   title: {
     fontSize: 28, // Slightly larger for better emphasis
     fontWeight: 'bold',
-    color: '#1565C0', // Deep blue font color
+    color: '#000', // Deep blue font color
     marginBottom: 30, // More spacing for a cleaner look
   },
   input: {
     width: '100%',
     height: 50,
-    borderColor: '#90CAF9', // Lighter border color for a polished feel
+    borderColor: '#000', // Lighter border color for a polished feel
     borderWidth: 1,
     marginBottom: 15, // Consistent spacing with the login screen
     paddingHorizontal: 15,
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     elevation: 2, // Subtle shadow for inputs
   },
   button: {
-    backgroundColor: '#1E88E5', // Consistent blue color with the rest of the app
+    backgroundColor: '#000', // Consistent blue color with the rest of the app
     padding: 15,
     borderRadius: 10,
     width: '100%',

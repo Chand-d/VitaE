@@ -56,24 +56,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#E3F2FD', // Light blue background color
+    backgroundColor: '#fff', // Light blue background color
   },
   title: {
     fontSize: 28, // Larger font for title consistency
     fontWeight: 'bold',
-    color: '#1565C0', // Deep blue color for emphasis
+    color: '#000', // Deep blue color for emphasis
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
     marginBottom: 20,
-    color: '#5E92F3', // Medium blue color for consistency
+    color: '#000', // Medium blue color for consistency
     textAlign: 'center',
   },
   input: {
     width: '100%',
     height: 50,
-    borderColor: '#90CAF9', // Light blue border color
+    borderColor: '#000', // Light blue border color
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 15,
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     elevation: 2, // Subtle shadow for the input
   },
   button: {
-    backgroundColor: '#1E88E5', // Consistent rich blue button color
+    backgroundColor: '#000', // Consistent rich blue button color
     padding: 15,
     borderRadius: 10, // Rounded corners
     width: '100%',

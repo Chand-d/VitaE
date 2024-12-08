@@ -1,5 +1,8 @@
 export type AmplifyDependentResourcesAttributes = {
   "auth": {
+    "userPoolGroups": {
+      "VitaEGroupRole": "string"
+    },
     "vitae135f94454": {
       "AppClientID": "string",
       "AppClientIDWeb": "string",

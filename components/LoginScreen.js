@@ -61,23 +61,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#E3F2FD', // Light blue background color
+    backgroundColor: '#fff', // Light blue background color
   },
   headerText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1565C0', // Deep blue color
+    color: '#000', // Deep blue color
     marginBottom: 10,
   },
   subHeaderText: {
     fontSize: 18,
-    color: '#5E92F3', // Medium blue color
+    color: '#000', // Medium blue color
     marginBottom: 30,
   },
   input: {
     width: '100%',
     height: 50,
-    borderColor: '#90CAF9', // Light blue border color
+    borderColor: '#000', // Light blue border color
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 15,
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   button: {
-    backgroundColor: '#1E88E5', // Rich blue button color
+    backgroundColor: '#000', // Rich blue button color
     padding: 15,
     borderRadius: 8,
     width: '100%',
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     marginTop: 20,
-    color: '#1565C0',
+    color: '#000',
     fontSize: 16,
   },
   signupText: {

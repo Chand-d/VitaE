@@ -1,6 +1,4 @@
-// FileUploader.js
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,18 +13,44 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
 
-const FileUploader = () => {
+const MainScreen = ({ navigation }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
-  const [additionalText, setAdditionalText] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [updatedResume, setUpdatedResume] = useState('');
+  const [recentDocuments, setRecentDocuments] = useState([]);
 
   const API_ENDPOINT =
-    'https://1aw4hjm1bc.execute-api.ca-central-1.amazonaws.com/dev/Image-Recognization'; // Replace with your actual API endpoint
+    'https://1aw4hjm1bc.execute-api.ca-central-1.amazonaws.com/dev/Image-Recognization';
 
-  // Handle File Selection
+  // Load the recent 5 documents from the library
+  const loadRecentDocuments = async () => {
+    try {
+      const libraryPath = `${FileSystem.documentDirectory}library.json`;
+      const libraryContent = await FileSystem.readAsStringAsync(libraryPath).catch(() => '[]');
+      const library = JSON.parse(libraryContent);
+
+      if (!Array.isArray(library)) {
+        throw new Error('Invalid library data.');
+      }
+
+      const recentDocs = library.slice(-5).reverse(); // Get last 5 and reverse to show latest first
+      setRecentDocuments(recentDocs);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load recent documents.');
+    }
+  };
+
+  useEffect(() => {
+    // Reload recent documents whenever the main screen gains focus
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadRecentDocuments();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -38,39 +62,30 @@ const FileUploader = () => {
         copyToCacheDirectory: true,
       });
 
-      console.log('DocumentPicker Result:', result);
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setSelectedFile(file);
-        console.log('Selected File:', file);
       } else if (result.canceled) {
         Alert.alert('Canceled', 'No file selected.');
       } else {
         Alert.alert('Error', 'Unknown response from document picker.');
       }
     } catch (err) {
-      console.error('Error picking document:', err);
       Alert.alert('Error', 'Failed to pick document. Please try again.');
     }
   };
 
-  // Handle File Upload
   const uploadFile = async () => {
     if (!selectedFile) {
       Alert.alert('Validation Error', 'Please select a file to upload.');
       return;
     }
 
-    console.log('Selected File:', selectedFile);
-
     try {
       const fileUri = selectedFile.uri;
       const fileName = selectedFile.name;
-      const fileExtension = fileName.split('.').pop().toLowerCase();
 
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      console.log('File Info:', fileInfo);
 
       if (!fileInfo.exists) {
         Alert.alert('Error', 'The selected file does not exist.');
@@ -78,7 +93,6 @@ const FileUploader = () => {
       }
 
       setUploading(true);
-      console.log('Uploading file...');
 
       const fileContent = await FileSystem.readAsStringAsync(fileUri, {
         encoding: FileSystem.EncodingType.Base64,
@@ -88,10 +102,7 @@ const FileUploader = () => {
         file_data_base64: fileContent,
         file_name: fileName,
         job_description: jobDescription,
-        additional_text: additionalText,
       };
-
-      console.log('Payload:', payload);
 
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
@@ -102,93 +113,44 @@ const FileUploader = () => {
       });
 
       const responseData = await response.json();
-      console.log('Server Response:', responseData);
 
       if (response.ok) {
         const updatedResumeText = responseData.updated_resume;
-        setUpdatedResume(updatedResumeText);
-        Alert.alert('Success', 'Your resume has been updated.');
+
+        // Navigate to Result.js with the updated resume text
+        navigation.navigate('Result', { updatedResume: updatedResumeText });
       } else {
         Alert.alert('Error', responseData.message || 'Failed to update resume.');
       }
     } catch (err) {
-      console.error('Error uploading file:', err);
       Alert.alert('Error', 'Failed to upload file. Please try again.');
     } finally {
       setUploading(false);
-      console.log('File upload completed.');
     }
   };
 
-  // Clear Output
-  const clearOutput = () => {
-    setUpdatedResume('');
-    setSelectedFile(null);
-    setJobDescription('');
-    setAdditionalText('');
-  };
-
-  // File Icon based on file type
-  const getFileIcon = (fileType) => {
-    const extension = fileType.toLowerCase();
-    switch (extension) {
-      case 'pdf':
-        return (
-          <MaterialCommunityIcons
-            name="file-pdf-box"
-            size={24}
-            color="#E74C3C"
-          />
-        );
-      case 'docx':
-        return (
-          <MaterialCommunityIcons
-            name="file-word-box"
-            size={24}
-            color="#3498DB"
-          />
-        );
-      case 'txt':
-        return (
-          <MaterialCommunityIcons
-            name="file-document-box"
-            size={24}
-            color="#2ECC71"
-          />
-        );
-      default:
-        return <Ionicons name="document-outline" size={24} color="#333" />;
+  const openDocument = async (uri) => {
+    try {
+      await Print.printAsync({ uri });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open document.');
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.wrapper}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>VitaE</Text>
-          <Text style={styles.headerSubtitle}>Level up your resume</Text>
-        </View>
+        {/* Subheading */}
+        <Text style={styles.heading}>Create Customized Resume and Cover Letter</Text>
 
-        {/* Job Description Input */}
         <TextInput
           style={styles.input}
-          placeholder="Enter Job Description (Optional)"
+          placeholder="Paste Job Description or Changes here..."
           multiline
           value={jobDescription}
           onChangeText={setJobDescription}
         />
 
-        {/* Additional Information Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Additional Information (Optional)"
-          multiline
-          value={additionalText}
-          onChangeText={setAdditionalText}
-        />
-
-        {/* Upload Button */}
         <TouchableOpacity
           style={[styles.button, uploading && styles.disabledButton]}
           onPress={uploadFile}
@@ -201,15 +163,17 @@ const FileUploader = () => {
           )}
         </TouchableOpacity>
 
-        {/* Display Selected File */}
         {selectedFile && (
           <View style={styles.fileInfo}>
-            {getFileIcon(selectedFile.name.split('.').pop())}
+            <MaterialCommunityIcons
+              name="file-document-outline"
+              size={24}
+              color="#333"
+            />
             <Text style={styles.fileName}>{selectedFile.name}</Text>
           </View>
         )}
 
-        {/* File Picker Button */}
         <TouchableOpacity style={styles.button} onPress={pickDocument}>
           <Ionicons name="cloud-upload-outline" size={24} color="white" />
           <Text style={styles.buttonText}>
@@ -217,23 +181,29 @@ const FileUploader = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Clear Output Button */}
-        {updatedResume !== '' && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={clearOutput}
-          >
-            <Text style={styles.clearButtonText}>Clear Output</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Display Updated Resume */}
-        {updatedResume !== '' && (
-          <View style={styles.resultContainer}>
-            <Text style={styles.resultTitle}>Updated Resume:</Text>
-            <Text style={styles.resultText}>{updatedResume}</Text>
-          </View>
-        )}
+        {/* Recent Documents Section */}
+        <View style={styles.recentContainer}>
+          <Text style={styles.recentHeader}>Recent Documents</Text>
+          {recentDocuments.length === 0 ? (
+            <Text style={styles.noRecentText}>No recent documents found.</Text>
+          ) : (
+            recentDocuments.map((doc, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.recentItem}
+                onPress={() => openDocument(doc.uri)}
+              >
+                <MaterialCommunityIcons
+                  name="file-pdf-box"
+                  size={24}
+                  color="#E74C3C"
+                  style={styles.recentIcon}
+                />
+                <Text style={styles.recentName}>{doc.name}</Text>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -242,31 +212,26 @@ const FileUploader = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5FCFF',
+    backgroundColor: 'white',
   },
   wrapper: {
-    flexGrow: 1, // Allow the ScrollView content to grow
-    justifyContent: 'flex-start', // Ensure the content starts from the top
+    flexGrow: 1,
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 40,
-    alignItems: 'center', // Center horizontally
-  },
-  header: {
     alignItems: 'center',
-    marginBottom: 30,
   },
-  headerTitle: {
-    fontSize: 32,
+  heading: {
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#3498DB',
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#7F8C8D',
+    marginBottom: 20,
+    textAlign: 'left',
+    color: '#333',
+    lineHeight: 28,
   },
   button: {
-    backgroundColor: '#3498DB',
+    backgroundColor: '#000',
     paddingVertical: 15,
     paddingHorizontal: 25,
     borderRadius: 8,
@@ -278,27 +243,12 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   disabledButton: {
-    backgroundColor: '#95A5A6',
+    backgroundColor: '#555',
   },
   buttonText: {
     color: 'white',
     marginLeft: 10,
     fontSize: 16,
-    fontWeight: '600',
-  },
-  clearButton: {
-    backgroundColor: '#E74C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 15,
-    width: '100%',
-    maxWidth: 400,
-  },
-  clearButtonText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
     fontWeight: '600',
   },
   fileInfo: {
@@ -326,26 +276,38 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     backgroundColor: '#fff',
   },
-  resultContainer: {
+  recentContainer: {
     marginTop: 20,
-    borderColor: '#2ECC71',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 15,
     width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#E8F8F5',
   },
-  resultTitle: {
+  recentHeader: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#16A085',
+    color: '#333',
   },
-  resultText: {
+  noRecentText: {
+    fontSize: 16,
+    color: '#777',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 10,
+    elevation: 2,
+  },
+  recentIcon: {
+    marginRight: 10,
+  },
+  recentName: {
     fontSize: 16,
     color: '#333',
   },
 });
 
-export default FileUploader;
+export default MainScreen;
